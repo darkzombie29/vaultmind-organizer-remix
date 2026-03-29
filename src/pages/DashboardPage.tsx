@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from 'react'
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion'
 import { 
@@ -66,8 +66,35 @@ export function DashboardPage({ user, processUrlFunctionUrl }: DashboardPageProp
   const [isSearchExpanded, setIsSearchExpanded] = useState(false)
   const [activeTab, setActiveTab] = useState<ContentTab>('All')
   const [addModalOpen, setAddModalOpen] = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | undefined>(undefined)
   const [coldExpanded, setColdExpanded] = useState(false)
   const [navTab, setNavTab] = useState<BottomNavTab>('home')
+
+  // PWA Share Target: detect ?share=true on mount, pre-fill modal, clean URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('share') !== 'true') return
+
+    // 'url' param is the direct link; 'text' may contain a URL embedded in prose
+    const rawUrl  = params.get('url')  || ''
+    const rawText = params.get('text') || ''
+
+    // Extract the first http(s) link from text when 'url' param is absent
+    const extractUrlFromText = (text: string) => {
+      const match = text.match(/https?:\/\/[^\s]+/)
+      return match ? match[0] : ''
+    }
+
+    const resolvedUrl = rawUrl.trim() || extractUrlFromText(rawText)
+
+    // Strip share params from browser history so Back/Refresh don't re-trigger
+    window.history.replaceState({}, '', window.location.pathname)
+
+    if (resolvedUrl) {
+      setShareUrl(resolvedUrl)
+      setAddModalOpen(true)
+    }
+  }, [])
   
   const scrollRef = useRef<HTMLDivElement>(null)
   const { scrollY } = useScroll({ container: scrollRef })
@@ -443,12 +470,17 @@ export function DashboardPage({ user, processUrlFunctionUrl }: DashboardPageProp
       {/* Modal */}
       <AddContentModal
         open={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
+        onClose={() => {
+          setAddModalOpen(false)
+          setShareUrl(undefined)   // clear pre-fill so re-opens start blank
+        }}
         userId={user.id}
         processUrlFunctionUrl={processUrlFunctionUrl}
+        initialUrl={shareUrl}
         onSuccess={() => {
           queryClient.invalidateQueries({ queryKey: ['savedItems', user.id] })
           setAddModalOpen(false)
+          setShareUrl(undefined)
         }}
       />
     </div>

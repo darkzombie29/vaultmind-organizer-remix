@@ -30,6 +30,8 @@ interface AddContentModalProps {
   userId: string
   processUrlFunctionUrl: string
   onSuccess?: () => void
+  /** Pre-filled URL from PWA Share Target — triggers auto-analysis on open */
+  initialUrl?: string
 }
 
 export function AddContentModal({
@@ -38,6 +40,7 @@ export function AddContentModal({
   userId,
   processUrlFunctionUrl,
   onSuccess,
+  initialUrl,
 }: AddContentModalProps) {
   const [url, setUrl] = useState('')
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null)
@@ -47,6 +50,20 @@ export function AddContentModal({
   const [analyzed, setAnalyzed] = useState<AnalyzedContent | null>(null)
   const [editableTags, setEditableTags] = useState<string[]>([])
   const [newTag, setNewTag] = useState('')
+
+  // Seed URL from share target and kick off analysis automatically
+  const prevOpenRef = React.useRef(false)
+  React.useEffect(() => {
+    const justOpened = open && !prevOpenRef.current
+    prevOpenRef.current = open
+    if (justOpened && initialUrl && initialUrl.trim()) {
+      const detectedPlatform = detectPlatformFromUrl(initialUrl)
+      setUrl(initialUrl.trim())
+      if (detectedPlatform !== 'Web') setSelectedPlatform(detectedPlatform)
+      // Small delay so the modal is fully rendered before analysis starts
+      setTimeout(() => handleAnalyzeUrl(initialUrl.trim()), 300)
+    }
+  }, [open, initialUrl])
 
   const handleClose = () => {
     setUrl('')
@@ -58,6 +75,51 @@ export function AddContentModal({
     setIsSaving(false)
     setPlatformDropdownOpen(false)
     onClose()
+  }
+
+  // Extracted analysis logic that can be called with an explicit URL string
+  const handleAnalyzeUrl = async (targetUrl: string) => {
+    setIsAnalyzing(true)
+    setAnalyzed(null)
+    try {
+      const token = await blink.auth.getValidToken().catch(() => null)
+      const response = await fetch(processUrlFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ url: targetUrl }),
+      })
+      if (!response.ok) throw new Error(`Failed: ${response.statusText}`)
+      const data = await response.json()
+      const detectedPlatform = (data.platform || 'Web') as Platform
+      const content: AnalyzedContent = {
+        platform: detectedPlatform,
+        title: data.title || 'Untitled',
+        summary: data.summary || '',
+        tags: Array.isArray(data.tags) ? data.tags : [],
+        thumbnail: data.thumbnail || '',
+        contentType: data.contentType || data.content_type || 'Article',
+      }
+      setAnalyzed(content)
+      setEditableTags(content.tags)
+      setSelectedPlatform(detectedPlatform)
+    } catch {
+      const platform = detectPlatformFromUrl(targetUrl)
+      setAnalyzed({
+        platform,
+        title: extractTitleFromUrl(targetUrl),
+        summary: 'Content saved from ' + (() => { try { return new URL(targetUrl).hostname.replace('www.', '') } catch { return targetUrl } })()
+        ,
+        tags: [],
+        thumbnail: '',
+        contentType: inferContentType(platform),
+      })
+      setEditableTags([])
+    } finally {
+      setIsAnalyzing(false)
+    }
   }
 
   // Auto-detect platform from URL when typing
