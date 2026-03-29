@@ -1,0 +1,146 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Blink UI Theme CSS
+   ───────────────────────────────────────────────────────────────────────────── */
+@import '@blinkdotnew/ui/styles';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 245 30% 8%;
+    --foreground: 250 25% 92%;
+    --card: 248 25% 12%;
+    --card-foreground: 250 25% 92%;
+    --popover: 248 25% 12%;
+    --popover-foreground: 250 25% 92%;
+    --primary: 259 45% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 248 25% 15%;
+    --secondary-foreground: 250 25% 92%;
+    --muted: 248 20% 18%;
+    --muted-foreground: 250 10% 57%;
+    --accent: 259 45% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 250 20% 15%;
+    --input: 250 20% 15%;
+    --ring: 259 45% 55%;
+    --radius: 0.75rem;
+    --font-sans: 'Inter', sans-serif;
+  }
+
+  * {
+    @apply border-border;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-sans);
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply backdrop-blur-md bg-white/[0.03] border border-white/[0.06];
+  }
+
+  .card-surface {
+    background-color: #1a1828;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .btn-primary {
+    background-color: #7c5cbf;
+    @apply text-white font-semibold transition-all duration-200 active:scale-95;
+  }
+
+  .gradient-border-purple {
+    position: relative;
+    background: #1a1828;
+    background-clip: padding-box;
+    border: 1px solid transparent;
+  }
+
+  .gradient-border-purple::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    z-index: -1;
+    margin: -1px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, #7c5cbf, #4a3a8c);
+  }
+}
+
+/* ── Custom Animations ── */
+.card-entrance {
+  animation: cardSlideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+@keyframes cardSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.03) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+/* ── Platform Colors ── */
+.platform-instagram { color: #E1306C; }
+.platform-linkedin { color: #0A66C2; }
+.platform-x { color: #ffffff; }
+.platform-reddit { color: #FF4500; }
+.platform-youtube { color: #FF0000; }
+.platform-tiktok { color: #00f2ea; }
+.platform-web { color: #7c5cbf; }
+
+.bg-instagram { background-color: #E1306C; }
+.bg-linkedin { background-color: #0A66C2; }
+.bg-x { background-color: #ffffff; }
+.bg-reddit { background-color: #FF4500; }
+.bg-youtube { background-color: #FF0000; }
+.bg-tiktok { background-color: #00f2ea; }
+.bg-web { background-color: #7c5cbf; }
+
+/* ── Safe Areas ── */
+.pb-safe {
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+
+.pt-safe {
+  padding-top: max(1rem, env(safe-area-inset-top));
+}
+
+.bottom-nav-height {
+  height: 80px;
+}
+
+.scroll-pb-nav {
+  padding-bottom: 100px;
+}

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="VaultMind">
+    <meta name="theme-color" content="#7c5cbf">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/png" href="/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
+
+    <!-- SEO / Social -->
+    <title>VaultMind — Your Content Second Brain</title>
+    <meta name="description" content="ADHD-friendly saved content organizer with AI summaries, auto-tagging, and distraction-free dark mode." />
+    <meta name="application-name" content="VaultMind" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="VaultMind" />
+    <meta property="og:description" content="Your second brain for everything you save online." />
+    <meta property="og:type" content="website" />
+
+    <!-- CRITICAL: DO NOT REMOVE/MODIFY THIS COMMENT OR THE SCRIPT BELOW -->
+    <script src="https://blink.new/auto-engineer.js?projectId=vaultmind-organizer-2skgwfqb" type="module"></script>
+
+    <script>
+      // PWA Share Target Handler
+      (function() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('share') === 'true') {
+          const sharedUrl   = params.get('url')   || '';
+          const sharedTitle = params.get('title') || '';
+          const sharedText  = params.get('text')  || '';
+          
+          // Auto-open the "Add to Vault" modal pre-filled with the shared content
+          window.addEventListener('DOMContentLoaded', () => {
+            // Small delay to let app render first
+            setTimeout(() => {
+              // Pre-fill URL field
+              const urlInput = document.querySelector('#save-url-input, [name="url"], input[placeholder*="https"], input[placeholder*="URL"]');
+              if (urlInput && sharedUrl) {
+                urlInput.value = sharedUrl;
+                // Trigger input event for React
+                urlInput.dispatchEvent(new Event('input', { bubbles: true }));
+              }
+              
+              // Open the Add to Vault modal automatically
+              const addBtn = document.querySelector('#add-btn, .fab-btn, [data-action="add"], button[aria-label*="add"], button[aria-label*="save"]');
+              if (addBtn) addBtn.click();
+              
+              // Show a toast notification
+              showShareToast(sharedTitle || sharedUrl || 'Content shared to VaultMind!');
+            }, 1000);
+          });
+        }
+        
+        function showShareToast(message) {
+          const toast = document.createElement('div');
+          toast.style.cssText = `
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #7c5cbf; color: white; padding: 12px 20px;
+            border-radius: 24px; font-size: 14px; z-index: 9999;
+            box-shadow: 0 4px 20px rgba(124,92,191,0.4);
+            animation: slideDown 0.3s ease;
+            max-width: 320px; text-align: center;
+          `;
+          toast.textContent = '⚡ Saved to VaultMind: ' + message.substring(0, 50) + (message.length > 50 ? '...' : '');
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 4000);
+        }
+      })();
+
+      // Register Service Worker for PWA
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/service-worker.js')
+            .then(r => console.log('VaultMind PWA ready'))
+            .catch(e => console.log('SW failed:', e));
+        });
+      }
+
+      // Install Banner
+      (function() {
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          deferredPrompt = e;
+          setTimeout(() => showInstallBanner(), 10000);
+        });
+        
+        function showInstallBanner() {
+          if (document.querySelector('#install-banner')) return;
+          const banner = document.createElement('div');
+          banner.id = 'install-banner';
+          banner.style.cssText = `
+            position: fixed; bottom: 80px; left: 16px; right: 16px;
+            background: linear-gradient(135deg, #1a1828, #241f38);
+            border: 1px solid rgba(124,92,191,0.4); border-radius: 16px;
+            padding: 16px; display: flex; align-items: center; gap: 12px;
+            z-index: 1000; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            animation: slideUp 0.4s ease-out;
+          `;
+          banner.innerHTML = `
+            <div style="font-size:28px">📲</div>
+            <div style="flex:1">
+              <div style="color:#e8e6f0;font-weight:600;font-size:14px">Install VaultMind</div>
+              <div style="color:#8b879a;font-size:12px">Add to home screen for share-to-save</div>
+            </div>
+            <button id="install-yes" style="background:#7c5cbf;color:white;border:none;padding:8px 16px;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600">Install</button>
+            <button id="install-no" style="background:none;color:#8b879a;border:none;padding:8px;cursor:pointer;font-size:18px">✕</button>
+          `;
+          document.body.appendChild(banner);
+          document.getElementById('install-yes').onclick = () => { deferredPrompt.prompt(); banner.remove(); };
+          document.getElementById('install-no').onclick = () => banner.remove();
+        }
+      })();
+    </script>
+    <style>
+      @keyframes slideDown { from { transform: translate(-50%, -20px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }
+      @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
